@@ -20,6 +20,16 @@ export type Appointment = AppointmentInput & {
   timezone: string;
 };
 
+export type AppointmentStatus = "scheduled" | "completed";
+
+export type StoredAppointment = AppointmentInput & {
+  id: string;
+  createdAt: string;
+  status: AppointmentStatus;
+  googleSynced: boolean;
+  googleEventId?: string;
+};
+
 export function parseAppointment(input: unknown): Appointment {
   const parsed = appointmentSchema.parse(input);
   const startDate = new Date(`${parsed.date}T${parsed.time}:00`);
@@ -35,6 +45,29 @@ export function parseAppointment(input: unknown): Appointment {
     startDate,
     endDate,
     timezone: process.env.APPOINTMENT_TIMEZONE || "Europe/Brussels",
+  };
+}
+
+export function hydrateAppointment(record: StoredAppointment): Appointment {
+  return parseAppointment(record);
+}
+
+export function createStoredAppointment(
+  appointment: Appointment,
+  metadata?: { googleSynced?: boolean; googleEventId?: string }
+): StoredAppointment {
+  return {
+    id: crypto.randomUUID(),
+    customerName: appointment.customerName,
+    customerEmail: appointment.customerEmail,
+    customerAddress: appointment.customerAddress,
+    reason: appointment.reason,
+    date: appointment.date,
+    time: appointment.time,
+    createdAt: new Date().toISOString(),
+    status: "scheduled",
+    googleSynced: metadata?.googleSynced ?? false,
+    googleEventId: metadata?.googleEventId,
   };
 }
 

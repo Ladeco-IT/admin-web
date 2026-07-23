@@ -6,6 +6,10 @@ Admin portaal om afspraken in te plannen voor klanten.
 
 - Admin vult naam, e-mail, adres, reden, datum en uur in.
 - API valideert invoer server-side.
+- Elke afspraak wordt lokaal opgeslagen in een JSON datastore.
+- Admin ziet een overzicht van alle gemaakte afspraken.
+- Per afspraak kan de admin markeren of die voltooid is.
+- Per afspraak kan de admin een .ics bestand downloaden om die in de eigen agenda te zetten.
 - Klant ontvangt een bedankmail met afspraakdetails.
 - Mail bevat een .ics uitnodiging (werkt met Apple Agenda en andere agenda-apps).
 - Google Agenda wordt automatisch gesynchroniseerd als Google credentials ingevuld zijn.
@@ -45,3 +49,7 @@ GOOGLE_CALENDAR_ID=
 4. Zet de drie Google variabelen in `.env.local`.
 
 Als Google niet is geconfigureerd, werkt de rest nog steeds: de klantmail en .ics uitnodiging worden dan wel verstuurd.
+
+## Opslag
+
+De afspraken worden lokaal bijgehouden in `data/appointments.json`.
