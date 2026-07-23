@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-import { createStoredAppointment, parseAppointment } from "@/lib/appointment";
-import { listAppointments, saveAppointment } from "@/lib/appointmentStore";
+import { parseAppointment } from "@/lib/appointment";
+import { listAppointments } from "@/lib/appointmentStore";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { syncGoogleAppointment } from "@/lib/googleCalendar";
 import { sendAppointmentConfirmation } from "@/lib/mailer";
 
 export async function GET() {
@@ -29,21 +28,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const appointment = parseAppointment(body);
 
-    const googleResult = await syncGoogleAppointment(appointment);
     await sendAppointmentConfirmation(appointment);
-    const storedAppointment = createStoredAppointment(appointment, {
-      googleSynced: googleResult.synced,
-      googleEventId: googleResult.eventId,
-    });
-    await saveAppointment(storedAppointment);
 
     return NextResponse.json(
       {
         ok: true,
         message:
           "Afspraak is aangemaakt. De klant heeft een bedankmail met afspraakdetails ontvangen.",
-        googleSynced: googleResult.synced,
-        appointment: storedAppointment,
       },
       { status: 201 }
     );
