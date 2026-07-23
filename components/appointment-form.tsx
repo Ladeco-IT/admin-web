@@ -27,7 +27,6 @@ export function AppointmentForm() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [googleSynced, setGoogleSynced] = useState<boolean | null>(null);
 
   const minDate = useMemo(() => {
     const now = new Date();
@@ -38,7 +37,6 @@ export function AppointmentForm() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
-    setGoogleSynced(null);
     setIsSubmitting(true);
 
     try {
@@ -64,7 +62,6 @@ export function AppointmentForm() {
       setSuccessMessage(
         payload.message || "Afspraak is opgeslagen, klantmail is verstuurd en agenda is verwerkt."
       );
-      setGoogleSynced(payload.googleSynced ?? null);
       setForm(initialForm);
     } catch {
       setErrorMessage("Kan de server niet bereiken. Probeer opnieuw.");
@@ -100,15 +97,6 @@ export function AppointmentForm() {
                 voor de klant
               </h1>
             </div>
-
-            <button
-              type="button"
-              onClick={onLogout}
-              disabled={isLoggingOut}
-              className="rounded-xl border border-white/15 bg-white/8 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
-            >
-              {isLoggingOut ? "Afmelden..." : "Afmelden"}
-            </button>
           </div>
 
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-slate-300">
