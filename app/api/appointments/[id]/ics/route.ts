@@ -1,10 +1,15 @@
 import { getAppointmentById } from "@/lib/appointmentStore";
 import { buildIcsContent, hydrateAppointment } from "@/lib/appointment";
+import { isAdminAuthenticated } from "@/lib/auth";
 
 export async function GET(
   _request: Request,
   context: RouteContext<"/api/appointments/[id]/ics">
 ) {
+  if (!(await isAdminAuthenticated())) {
+    return new Response("Niet aangemeld.", { status: 401 });
+  }
+
   const { id } = await context.params;
   const appointment = await getAppointmentById(id);
 

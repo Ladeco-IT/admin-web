@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isAdminAuthenticated } from "@/lib/auth";
 import { updateAppointmentStatus } from "@/lib/appointmentStore";
 
 const statusSchema = z.object({
@@ -11,6 +12,10 @@ export async function PATCH(
   request: Request,
   context: RouteContext<"/api/appointments/[id]">
 ) {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ ok: false, message: "Niet aangemeld." }, { status: 401 });
+  }
+
   const { id } = await context.params;
 
   try {

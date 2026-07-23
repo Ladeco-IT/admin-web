@@ -4,6 +4,7 @@ Admin portaal om afspraken in te plannen voor klanten.
 
 ## Functionaliteit
 
+- Dashboard is afgeschermd met admin login.
 - Admin vult naam, e-mail, adres, reden, datum en uur in.
 - API valideert invoer server-side.
 - Elke afspraak wordt lokaal opgeslagen in een JSON datastore.
@@ -30,6 +31,10 @@ Maak een `.env.local` bestand en gebruik onderstaande variabelen.
 ```env
 APPOINTMENT_TIMEZONE=Europe/Brussels
 
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=
+ADMIN_SESSION_SECRET=
+
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
@@ -40,6 +45,14 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 GOOGLE_CALENDAR_ID=
 ```
+
+## Admin login
+
+Stel minstens `ADMIN_USERNAME`, `ADMIN_PASSWORD` en `ADMIN_SESSION_SECRET` in om de admin login te activeren.
+
+- `ADMIN_USERNAME`: loginnaam voor de admin.
+- `ADMIN_PASSWORD`: wachtwoord voor de admin.
+- `ADMIN_SESSION_SECRET`: willekeurige geheime sleutel om sessiecookies te ondertekenen.
 
 ## Google Calendar sync instellen
 

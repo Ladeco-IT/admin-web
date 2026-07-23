@@ -3,10 +3,15 @@ import { ZodError } from "zod";
 
 import { createStoredAppointment, parseAppointment } from "@/lib/appointment";
 import { listAppointments, saveAppointment } from "@/lib/appointmentStore";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { syncGoogleAppointment } from "@/lib/googleCalendar";
 import { sendAppointmentConfirmation } from "@/lib/mailer";
 
 export async function GET() {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ ok: false, message: "Niet aangemeld." }, { status: 401 });
+  }
+
   const appointments = await listAppointments();
 
   return NextResponse.json({
@@ -16,6 +21,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ ok: false, message: "Niet aangemeld." }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const appointment = parseAppointment(body);
