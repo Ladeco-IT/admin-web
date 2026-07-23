@@ -40,10 +40,6 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=info@ladeco-it.com
-
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
-GOOGLE_CALENDAR_ID=
 ```
 
 ## Admin login
@@ -53,15 +49,6 @@ Stel minstens `ADMIN_USERNAME`, `ADMIN_PASSWORD` en `ADMIN_SESSION_SECRET` in om
 - `ADMIN_USERNAME`: loginnaam voor de admin.
 - `ADMIN_PASSWORD`: wachtwoord voor de admin.
 - `ADMIN_SESSION_SECRET`: willekeurige geheime sleutel om sessiecookies te ondertekenen.
-
-## Google Calendar sync instellen
-
-1. Maak een service account in Google Cloud.
-2. Activeer de Google Calendar API.
-3. Deel de gewenste Google Agenda met het service-account e-mailadres.
-4. Zet de drie Google variabelen in `.env.local`.
-
-Als Google niet is geconfigureerd, werkt de rest nog steeds: de klantmail en .ics uitnodiging worden dan wel verstuurd.
 
 ## Opslag
 
