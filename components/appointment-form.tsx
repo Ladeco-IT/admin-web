@@ -121,9 +121,6 @@ export function AppointmentForm() {
               E-mailbevestiging wordt naar de klant gestuurd met reden, datum en uur.
             </div>
             <div className="rounded-xl border border-white/15 bg-white/5 p-3">
-              Google Agenda sync gebeurt automatisch wanneer de admin agenda als Google calendar is ingesteld.
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-3">
               De admin kan elke afspraak ook handmatig in de eigen agenda zetten via een .ics download.
             </div>
           </div>
