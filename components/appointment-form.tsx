@@ -232,17 +232,6 @@ export function AppointmentForm() {
             </p>
           )}
 
-          {successMessage && (
-            <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-              {successMessage}
-              {googleSynced === false && (
-                <span className="block pt-1 text-emerald-700">
-                  Google sync is overgeslagen omdat de credentials niet volledig zijn ingesteld.
-                </span>
-              )}
-            </p>
-          )}
-
           <button
             type="submit"
             disabled={isSubmitting}
