@@ -22,6 +22,7 @@ Deze applicatie (admin-web) is gebouwd met Next.js en vormt de basis voor je adm
 4.  **Omgevingsvariabelen instellen**:
     *   Maak een bestand genaamd `.env.local` aan in de hoofdmap (als deze nog niet bestaat).
     *   Kopieer de variabelen uit `.env.example` en vul de juiste waarden in (ADMIN_PASSWORD, SMTP_PASS, etc.).
+    *   Voor pc-builder synchronisatie: stel ook `PC_CATALOG_SYNC_TOKEN` in. Dit token wordt gebruikt door de publieke website om veilig `/api/pc-catalog` op te halen zonder gebruikerslogin.
 5.  **Applicatie bouwen**:
     ```bash
     npm run build
@@ -39,6 +40,13 @@ Deze applicatie (admin-web) is gebouwd met Next.js en vormt de basis voor je adm
     ```
 
 ## Toekomstige integraties
+
+## PC-catalogus synchronisatie
+
+1.  Open de nieuwe beheerpagina op `/pc-catalog` en onderhoud daar onderdelen, prijzen en foto-links.
+2.  Stel op deze admin server `PC_CATALOG_SYNC_TOKEN` in (bijv. een lange random string).
+3.  Stel op de publieke website dezelfde token in als `PC_CATALOG_SYNC_TOKEN`.
+4.  Stel op de publieke website `PC_CATALOG_SYNC_URL` in naar deze endpoint, bv. `https://jouwdomein-admin.be/api/pc-catalog`.
 
 *   **Accountable (Offertes en Facturen)**: Via de Accountable API kunnen we offertes en facturen ophalen en tonen in dit dashboard of direct linken aan afspraken. We moeten hiervoor de API documentatie van Accountable raadplegen en de authenticatiesleutels toevoegen aan ons `.env.local` bestand.
 *   **Flutter App**: De Flutter app zal communiceren met deze server (bijv. via de `/api/...` routes). We kunnen eventueel nieuwe API-routes toevoegen specifiek voor de mobiele app om data te raadplegen of acties (zoals nieuwe afspraken toevoegen) uit te voeren. Zorg ervoor dat de server bereikbaar is (firewall configureren voor de gebruikte poort) en gebruik bij voorkeur een SSL certificaat (HTTPS) voor veilige communicatie, zeker met mobiele apps.

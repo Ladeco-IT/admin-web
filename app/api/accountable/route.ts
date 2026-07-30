@@ -17,7 +17,7 @@ export async function GET() {
       invoices,
       quotes
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { ok: false, message: "Fout met ophalen uit Accountable" },
       { status: 500 }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
           ok: true,
           document: result
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json(
           { ok: false, message: "Fout bij aanmaken document in Accountable" },
           { status: 500 }

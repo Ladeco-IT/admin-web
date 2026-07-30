@@ -33,7 +33,6 @@ export function AppointmentForm() {
   const [form, setForm] = useState<AppointmentForm>(initialForm);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [createdIcsUrl, setCreatedIcsUrl] = useState("");
@@ -47,7 +46,6 @@ export function AppointmentForm() {
   useEffect(() => {
     const query = form.customerAddress.trim();
     if (query.length < 3) {
-      setAddressSuggestions([]);
       return;
     }
 
@@ -151,17 +149,6 @@ export function AppointmentForm() {
     }
   };
 
-  const onLogout = async () => {
-    setIsLoggingOut(true);
-
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/login";
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   return (
     <main className="relative isolate min-h-screen overflow-hidden px-6 py-10 md:px-12">
       <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_20%_15%,rgba(250,204,21,0.24),transparent_42%),radial-gradient(circle_at_80%_0%,rgba(20,184,166,0.22),transparent_40%),linear-gradient(130deg,#fef9c3_0%,#f8fafc_40%,#ecfeff_100%)]" />
@@ -244,9 +231,10 @@ export function AppointmentForm() {
             <input
               required
               value={form.customerAddress}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, customerAddress: event.target.value }))
-              }
+              onChange={(event) => {
+                setForm((current) => ({ ...current, customerAddress: event.target.value }));
+                setAddressSuggestions([]);
+              }}
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-teal-500 transition focus:ring-2"
               placeholder="Straat + nummer, postcode + gemeente"
             />
