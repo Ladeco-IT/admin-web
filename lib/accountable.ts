@@ -49,3 +49,21 @@ export async function fetchQuotes() {
   // Echte call later
   return [];
 }
+
+export async function createQuote(data: any) {
+  if (!API_KEY) {
+     console.warn("Let op: ACCOUNTABLE_API_KEY ontbreekt in je .env.local, mock creatie");
+     return { id: `OFF2026-00${Math.floor(Math.random() * 1000)}`, client: data.clientName, amount: 0, status: "ontwerp", date: new Date().toISOString() };
+  }
+  // Hier kan later de werkelijke POST call naar Accountable
+  return null;
+}
+
+export async function createInvoice(data: any) {
+    if (!API_KEY) {
+       console.warn("Let op: ACCOUNTABLE_API_KEY ontbreekt in je .env.local, mock creatie");
+       return { id: `F2026-00${Math.floor(Math.random() * 1000)}`, client: data.clientName, amount: 0, status: "openstaand", date: new Date().toISOString() };
+    }
+    // Hier kan later de werkelijke POST call naar Accountable
+    return null;
+}
