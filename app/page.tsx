@@ -2,14 +2,14 @@
 import { redirect } from "next/navigation";
 
 import { AppointmentsOverview } from "@/components/appointments-overview";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 
 export default async function Home() {
-  const authenticated = await isAdminAuthenticated();
+  const session = await getSessionUser();
 
-  if (!authenticated) {
+  if (!session) {
     redirect("/login");
   }
 
-  return <AppointmentsOverview />;
+  return <AppointmentsOverview currentUser={session} />;
 }
