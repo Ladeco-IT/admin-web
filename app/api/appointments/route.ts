@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { parseAppointment } from "@/lib/appointment";
-import { listAppointments } from "@/lib/appointmentStore";
+import { listAppointments, saveAppointment } from "@/lib/appointmentStore";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { sendAppointmentConfirmation } from "@/lib/mailer";
 
@@ -26,11 +26,20 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const appointment = parseAppointment(body);
+    const appointmentInput = parseAppointment(body);
+    
+    // Convert parsed appointment to a stored appointment object
+    const appointmentObj = {
+      ...appointmentInput,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      status: "scheduled" as const,
+      googleSynced: false
+    };
 
-    const newSize = await saveAppointment(appointment);
+    const newSize = await saveAppointment(appointmentObj);
 
-    await sendAppointmentConfirmation(appointment);
+    await sendAppointmentConfirmation(appointmentObj);
 
     return NextResponse.json(
       {
