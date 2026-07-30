@@ -50,13 +50,33 @@ async function seedDefaultAdmin(): Promise<StoredUser[]> {
   ];
 }
 
+async function ensureDefaultAdminIfNeeded(users: StoredUser[]): Promise<StoredUser[]> {
+  if (users.length > 0) {
+    return users;
+  }
+
+  const seeded = await seedDefaultAdmin();
+  if (seeded.length > 0) {
+    await writeUsers(seeded);
+    return seeded;
+  }
+
+  return users;
+}
+
 async function readUsers(): Promise<StoredUser[]> {
   await ensureStore();
   const content = await readFile(dataFilePath, "utf8");
 
   try {
-    return JSON.parse(content) as StoredUser[];
+    const parsed = JSON.parse(content) as StoredUser[];
+    return ensureDefaultAdminIfNeeded(parsed);
   } catch {
+    const seeded = await seedDefaultAdmin();
+    if (seeded.length > 0) {
+      await writeUsers(seeded);
+      return seeded;
+    }
     return [];
   }
 }

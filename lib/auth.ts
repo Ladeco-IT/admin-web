@@ -23,8 +23,54 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Wachtwoord is verplicht."),
 });
 
+function getEnvAdminCredentials(): { username: string; password: string } | null {
+  const username = process.env.ADMIN_USERNAME?.trim();
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!username || !password) {
+    return null;
+  }
+
+  return { username, password };
+}
+
 function getSessionSecret(): string {
   return process.env.ADMIN_SESSION_SECRET || "ladeco-it-admin-session-secret";
+}
+
+function shouldUseSecureCookies(): boolean {
+  const explicit = process.env.AUTH_COOKIE_SECURE?.toLowerCase();
+
+  if (explicit === "true") {
+    return true;
+  }
+
+  if (explicit === "false") {
+    return false;
+  }
+
+  const appUrl =
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.SITE_URL ||
+    "";
+
+  if (appUrl.toLowerCase().startsWith("https://")) {
+    return true;
+  }
+
+  if (appUrl.toLowerCase().startsWith("http://")) {
+    return false;
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
+function resolveSameSite(): "lax" | "strict" | "none" {
+  const value = process.env.AUTH_COOKIE_SAMESITE?.toLowerCase();
+  if (value === "strict") return "strict";
+  if (value === "none") return "none";
+  return "lax";
 }
 
 function signPayload(payload: string): string {
@@ -36,16 +82,33 @@ export async function isValidCredentials(username: string, password: string): Pr
   role?: SessionRole;
 }> {
   const user = await getUserByUsername(username);
-  if (!user || !user.active) {
-    return { ok: false };
+
+  if (user && user.active) {
+    const candidateHash = (user as unknown as { passwordHash?: string }).passwordHash;
+
+    if (candidateHash && candidateHash.includes(":")) {
+      const isValid = await verifyPassword(password, candidateHash);
+      if (isValid) {
+        return { ok: true, role: user.role };
+      }
+    }
+
+    // Legacy compatibility: some early records may still contain plaintext values.
+    if (candidateHash && candidateHash === password) {
+      return { ok: true, role: user.role };
+    }
   }
 
-  const isValid = await verifyPassword(password, user.passwordHash);
-  if (!isValid) {
-    return { ok: false };
+  const envAdmin = getEnvAdminCredentials();
+  if (
+    envAdmin &&
+    username.trim().toLowerCase() == envAdmin.username.toLowerCase() &&
+    password == envAdmin.password
+  ) {
+    return { ok: true, role: "admin" };
   }
 
-  return { ok: true, role: user.role };
+  return { ok: false };
 }
 
 export function createSessionToken(input: { username: string; role: SessionRole }): string {
@@ -137,11 +200,14 @@ export async function requireRoles(roles: UserRole[]): Promise<SessionUser | nul
 }
 
 export function getSessionCookieSettings() {
+  const domain = process.env.AUTH_COOKIE_DOMAIN?.trim();
+
   return {
     name: SESSION_COOKIE_NAME,
     httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    sameSite: resolveSameSite(),
+    secure: shouldUseSecureCookies(),
+    ...(domain ? { domain } : {}),
     path: "/",
     maxAge: sessionDurationMs / 1000,
   };
