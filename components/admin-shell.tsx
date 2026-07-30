@@ -72,6 +72,12 @@ export function AdminShell({ title, subtitle, username, role, children }: AdminS
           >
             Interne tools
           </Link>
+          <Link
+            href="/pc-catalog"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            PC catalogus
+          </Link>
         </nav>
 
         {children}

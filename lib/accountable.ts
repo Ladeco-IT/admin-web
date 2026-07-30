@@ -3,9 +3,19 @@
 // Haalt de API key uit je .env of .env.local bestand
 const API_KEY = process.env.ACCOUNTABLE_API_KEY;
 
-// Opmerking: Accountable's werkelijke API url en structuur kan afwijken van hun publieke documentatie.
-// Base URL als placeholder, aan te passen met de officiële Accountable API base path.
-const BASE_URL = "https://api.accountable.eu/v1"; 
+type AccountableDraftInput = {
+  clientName: string;
+  clientEmail?: string;
+  clientAddress?: string;
+};
+
+type AccountableDraftDocument = {
+  id: string;
+  client: string;
+  amount: number;
+  status: string;
+  date: string;
+};
 
 export async function fetchInvoices() {
   if (!API_KEY) {
@@ -50,7 +60,7 @@ export async function fetchQuotes() {
   return [];
 }
 
-export async function createQuote(data: any) {
+export async function createQuote(data: AccountableDraftInput): Promise<AccountableDraftDocument | null> {
   if (!API_KEY) {
      console.warn("Let op: ACCOUNTABLE_API_KEY ontbreekt in je .env.local, mock creatie");
      return { id: `OFF2026-00${Math.floor(Math.random() * 1000)}`, client: data.clientName, amount: 0, status: "ontwerp", date: new Date().toISOString() };
@@ -59,7 +69,7 @@ export async function createQuote(data: any) {
   return null;
 }
 
-export async function createInvoice(data: any) {
+export async function createInvoice(data: AccountableDraftInput): Promise<AccountableDraftDocument | null> {
     if (!API_KEY) {
        console.warn("Let op: ACCOUNTABLE_API_KEY ontbreekt in je .env.local, mock creatie");
        return { id: `F2026-00${Math.floor(Math.random() * 1000)}`, client: data.clientName, amount: 0, status: "openstaand", date: new Date().toISOString() };

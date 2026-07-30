@@ -51,6 +51,8 @@ export function UserManagementPanel({ currentRole }: UserManagementPanelProps) {
   };
 
   useEffect(() => {
+    // Initial client-side hydration fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadUsers();
   }, []);
 
