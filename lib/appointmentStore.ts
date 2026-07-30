@@ -43,10 +43,11 @@ export async function listAppointments(): Promise<StoredAppointment[]> {
   });
 }
 
-export async function saveAppointment(appointment: StoredAppointment): Promise<void> {
+export async function saveAppointment(appointment: StoredAppointment): Promise<number> {
   const appointments = await readAppointments();
-  appointments.push(appointment);
+  const newSize = appointments.push(appointment);
   await writeAppointments(appointments);
+  return newSize;
 }
 
 export async function getAppointmentById(
