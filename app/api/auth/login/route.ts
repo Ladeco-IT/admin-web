@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 import {
   createSessionToken,
   getSessionCookieSettings,
-  isValidAdminCredentials,
+  isValidCredentials,
   loginSchema,
 } from "@/lib/auth";
 
@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { username, password } = loginSchema.parse(body);
 
-    if (!isValidAdminCredentials(username, password)) {
+    const validation = await isValidCredentials(username, password);
+
+    if (!validation.ok || !validation.role) {
       return NextResponse.json(
         {
           ok: false,
@@ -23,10 +25,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = NextResponse.json({ ok: true });
+    const response = NextResponse.json({
+      ok: true,
+      user: {
+        username,
+        role: validation.role,
+      },
+    });
     response.cookies.set({
       ...getSessionCookieSettings(),
-      value: createSessionToken(username),
+      value: createSessionToken({
+        username,
+        role: validation.role,
+      }),
     });
 
     return response;

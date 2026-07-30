@@ -17,7 +17,24 @@ type AppointmentRecord = {
   googleEventId?: string;
 };
 
-export function AppointmentsOverview() {
+type SessionUser = {
+  username: string;
+  role: "admin" | "manager" | "technician" | "sales";
+};
+
+type AppointmentsOverviewProps = {
+  currentUser: SessionUser;
+};
+
+function canManageUsers(role: string): boolean {
+  return role === "admin" || role === "manager";
+}
+
+function canManageCustomers(role: string): boolean {
+  return role === "admin" || role === "manager" || role === "sales" || role === "technician";
+}
+
+export function AppointmentsOverview({ currentUser }: AppointmentsOverviewProps) {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -113,9 +130,34 @@ export function AppointmentsOverview() {
             <h1 className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-bold leading-tight text-slate-900 md:text-4xl">
               Overzicht afspraken
             </h1>
+            <p className="mt-2 text-sm text-slate-700">
+              Ingelogd als <strong>{currentUser.username}</strong> ({currentUser.role})
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/interne-tools"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Interne tools
+            </Link>
+            {canManageCustomers(currentUser.role) ? (
+              <Link
+                href="/klanten"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Klantenbeheer
+              </Link>
+            ) : null}
+            {canManageUsers(currentUser.role) ? (
+              <Link
+                href="/team"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Accountbeheer
+              </Link>
+            ) : null}
             <Link
               href="/afspraak-maken"
               className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"

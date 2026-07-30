@@ -3,7 +3,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+import { verifyPassword } from "@/lib/password";
+import { getUserByUsername, type UserRole } from "@/lib/userStore";
+
 export const SESSION_COOKIE_NAME = "ladeco-admin-session";
+export const roleSchema = z.enum(["admin", "manager", "technician", "sales"]);
+export type SessionRole = z.infer<typeof roleSchema>;
+
+export type SessionUser = {
+  username: string;
+  role: SessionRole;
+  expiresAt: number;
+};
 
 const sessionDurationMs = 1000 * 60 * 60 * 12;
 
@@ -16,73 +27,113 @@ function getSessionSecret(): string {
   return process.env.ADMIN_SESSION_SECRET || "ladeco-it-admin-session-secret";
 }
 
-function getAdminCredentials() {
-  const username = process.env.ADMIN_USERNAME;
-  const password = process.env.ADMIN_PASSWORD;
-
-  if (!username || !password) {
-    throw new Error("Admin login is niet geconfigureerd. Stel ADMIN_USERNAME en ADMIN_PASSWORD in.");
-  }
-
-  return { username, password };
-}
-
 function signPayload(payload: string): string {
   return createHmac("sha256", getSessionSecret()).update(payload).digest("hex");
 }
 
-export function isValidAdminCredentials(username: string, password: string): boolean {
-  const configured = getAdminCredentials();
-  return username === configured.username && password === configured.password;
+export async function isValidCredentials(username: string, password: string): Promise<{
+  ok: boolean;
+  role?: SessionRole;
+}> {
+  const user = await getUserByUsername(username);
+  if (!user || !user.active) {
+    return { ok: false };
+  }
+
+  const isValid = await verifyPassword(password, user.passwordHash);
+  if (!isValid) {
+    return { ok: false };
+  }
+
+  return { ok: true, role: user.role };
 }
 
-export function createSessionToken(username: string): string {
+export function createSessionToken(input: { username: string; role: SessionRole }): string {
   const expiresAt = Date.now() + sessionDurationMs;
-  const payload = `${username}:${expiresAt}`;
+  const payload = `${input.username}:${input.role}:${expiresAt}`;
   const signature = signPayload(payload);
 
   return Buffer.from(`${payload}:${signature}`, "utf8").toString("base64url");
 }
 
-export function verifySessionToken(token: string | undefined): boolean {
+export function decodeSessionToken(token: string | undefined): SessionUser | null {
   if (!token) {
-    return false;
+    return null;
   }
 
   try {
     const decoded = Buffer.from(token, "base64url").toString("utf8");
-    const [username, expiresAt, signature] = decoded.split(":");
+    const [username, role, expiresAtRaw, signature] = decoded.split(":");
+    const expiresAt = Number(expiresAtRaw);
 
-    if (!username || !expiresAt || !signature) {
-      return false;
+    if (!username || !role || !expiresAtRaw || !signature) {
+      return null;
     }
 
-    const configured = getAdminCredentials();
-    if (username !== configured.username) {
-      return false;
+    const roleResult = roleSchema.safeParse(role);
+    if (!roleResult.success) {
+      return null;
     }
 
-    const expected = signPayload(`${username}:${expiresAt}`);
+    const expected = signPayload(`${username}:${role}:${expiresAtRaw}`);
     const providedBuffer = Buffer.from(signature, "hex");
     const expectedBuffer = Buffer.from(expected, "hex");
 
     if (providedBuffer.length !== expectedBuffer.length) {
-      return false;
+      return null;
     }
 
     if (!timingSafeEqual(providedBuffer, expectedBuffer)) {
-      return false;
+      return null;
     }
 
-    return Number(expiresAt) > Date.now();
+    if (Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+      return null;
+    }
+
+    return {
+      username,
+      role: roleResult.data,
+      expiresAt,
+    };
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function verifySessionToken(token: string | undefined): boolean {
+  return decodeSessionToken(token) != null;
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
   const cookieStore = await cookies();
   return verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
+}
+
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const cookieStore = await cookies();
+  return decodeSessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
+}
+
+export function hasAnyRole(user: SessionUser | null, roles: UserRole[]): boolean {
+  if (!user) {
+    return false;
+  }
+
+  return roles.includes(user.role);
+}
+
+export async function requireRoles(roles: UserRole[]): Promise<SessionUser | null> {
+  const user = await getSessionUser();
+  if (!user) {
+    return null;
+  }
+
+  if (!hasAnyRole(user, roles)) {
+    return null;
+  }
+
+  return user;
 }
 
 export function getSessionCookieSettings() {

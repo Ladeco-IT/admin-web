@@ -78,3 +78,37 @@ export async function updateAppointmentStatus(
 
   return updated;
 }
+
+export async function updateAppointment(
+  appointmentId: string,
+  update: Omit<StoredAppointment, "id" | "createdAt" | "status" | "googleSynced" | "googleEventId">
+): Promise<StoredAppointment | undefined> {
+  const appointments = await readAppointments();
+  const index = appointments.findIndex((appointment) => appointment.id === appointmentId);
+
+  if (index === -1) {
+    return undefined;
+  }
+
+  const updated = {
+    ...appointments[index],
+    ...update,
+  };
+
+  appointments[index] = updated;
+  await writeAppointments(appointments);
+
+  return updated;
+}
+
+export async function deleteAppointment(appointmentId: string): Promise<boolean> {
+  const appointments = await readAppointments();
+  const next = appointments.filter((appointment) => appointment.id !== appointmentId);
+
+  if (next.length === appointments.length) {
+    return false;
+  }
+
+  await writeAppointments(next);
+  return true;
+}

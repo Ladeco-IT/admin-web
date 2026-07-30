@@ -7,6 +7,7 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const isAuthenticated = verifySessionToken(token);
   const { pathname } = request.nextUrl;
+  const isPublicApiRoute = pathname === "/api/auth/login";
 
   if (pathname === "/login") {
     if (isAuthenticated) {
@@ -17,6 +18,10 @@ export function proxy(request: NextRequest) {
   }
 
   if (!isAuthenticated) {
+    if (isPublicApiRoute) {
+      return NextResponse.next();
+    }
+
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         {
@@ -34,5 +39,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/api/appointments/:path*"],
+  matcher: ["/", "/login", "/api/:path*"],
 };
