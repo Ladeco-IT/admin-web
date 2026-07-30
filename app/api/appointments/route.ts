@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       googleSynced: false
     };
 
-    const newSize = await saveAppointment(appointmentObj);
+    await saveAppointment(appointmentObj);
 
     await sendAppointmentConfirmation(appointmentObj);
 
@@ -46,6 +46,8 @@ export async function POST(request: Request) {
         ok: true,
         message:
           "Afspraak is aangemaakt. De klant heeft een bedankmail met afspraakdetails ontvangen.",
+        appointment: appointmentObj,
+        icsUrl: `/api/appointments/${appointmentObj.id}/ics`,
       },
       { status: 201 }
     );
