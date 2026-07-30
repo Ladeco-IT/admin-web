@@ -4,7 +4,7 @@ module.exports = {
       name: "ladeco-it-admin",
       script: "./node_modules/next/dist/bin/next",
       args: "start",
-      cwd: "C:\\Users\\Alexander\\admin-web",
+      cwd: "C:\\inetpub\\admin-web",
       env: {
         PORT: 3000,
         HOSTNAME: "0.0.0.0",
