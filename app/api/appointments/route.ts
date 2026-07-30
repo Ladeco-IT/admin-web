@@ -28,6 +28,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const appointment = parseAppointment(body);
 
+    const newSize = await saveAppointment(appointment);
+
     await sendAppointmentConfirmation(appointment);
 
     return NextResponse.json(
