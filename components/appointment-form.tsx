@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type AppointmentForm = {
   customerName: string;
   customerEmail: string;
+  customerAddress: string;
+  reason: string;
+  date: string;
+  time: string;
+};
+
+type CreatedAppointment = {
+  customerName: string;
   customerAddress: string;
   reason: string;
   date: string;
@@ -23,20 +31,86 @@ const initialForm: AppointmentForm = {
 
 export function AppointmentForm() {
   const [form, setForm] = useState<AppointmentForm>(initialForm);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [createdIcsUrl, setCreatedIcsUrl] = useState("");
+  const [createdGoogleCalendarUrl, setCreatedGoogleCalendarUrl] = useState("");
 
   const minDate = useMemo(() => {
     const now = new Date();
     return now.toISOString().split("T")[0];
   }, []);
 
+  useEffect(() => {
+    const query = form.customerAddress.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/places/autocomplete?query=${encodeURIComponent(query)}`, {
+          cache: "no-store",
+        });
+
+        const payload: {
+          suggestions?: Array<{ description?: string }>;
+        } = await response.json();
+
+        if (!response.ok) {
+          setAddressSuggestions([]);
+          return;
+        }
+
+        const mapped = (payload.suggestions || [])
+          .map((item) => item.description || "")
+          .filter((item) => item.length > 0);
+
+        setAddressSuggestions(mapped);
+      } catch {
+        setAddressSuggestions([]);
+      }
+    }, 220);
+
+    return () => clearTimeout(timeout);
+  }, [form.customerAddress]);
+
+  const buildGoogleCalendarUrl = (appointment: CreatedAppointment) => {
+    const startDate = new Date(`${appointment.date}T${appointment.time}:00`);
+    if (Number.isNaN(startDate.getTime())) {
+      return "";
+    }
+
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+    const formatUtc = (date: Date) => {
+      const y = date.getUTCFullYear().toString().padStart(4, "0");
+      const m = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+      const d = date.getUTCDate().toString().padStart(2, "0");
+      const h = date.getUTCHours().toString().padStart(2, "0");
+      const min = date.getUTCMinutes().toString().padStart(2, "0");
+      const s = date.getUTCSeconds().toString().padStart(2, "0");
+      return `${y}${m}${d}T${h}${min}${s}Z`;
+    };
+
+    const url = new URL("https://calendar.google.com/calendar/u/0/r/eventedit");
+    url.searchParams.set("text", `Afspraak - ${appointment.customerName}`);
+    url.searchParams.set("details", appointment.reason);
+    url.searchParams.set("location", appointment.customerAddress);
+    url.searchParams.set("dates", `${formatUtc(startDate)}/${formatUtc(endDate)}`);
+    return url.toString();
+  };
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setCreatedIcsUrl("");
+    setCreatedGoogleCalendarUrl("");
     setIsSubmitting(true);
 
     try {
@@ -52,6 +126,8 @@ export function AppointmentForm() {
         message?: string;
         errors?: string[];
         googleSynced?: boolean;
+        icsUrl?: string;
+        appointment?: CreatedAppointment;
       } = await response.json();
 
       if (!response.ok) {
@@ -62,7 +138,12 @@ export function AppointmentForm() {
       setSuccessMessage(
         payload.message || "Afspraak is opgeslagen, klantmail is verstuurd en agenda is verwerkt."
       );
+      setCreatedIcsUrl(payload.icsUrl || "");
+      setCreatedGoogleCalendarUrl(
+        payload.appointment ? buildGoogleCalendarUrl(payload.appointment) : ""
+      );
       setForm(initialForm);
+      setAddressSuggestions([]);
     } catch {
       setErrorMessage("Kan de server niet bereiken. Probeer opnieuw.");
     } finally {
@@ -169,6 +250,23 @@ export function AppointmentForm() {
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-teal-500 transition focus:ring-2"
               placeholder="Straat + nummer, postcode + gemeente"
             />
+            {addressSuggestions.length > 0 ? (
+              <div className="mt-2 max-h-44 overflow-auto rounded-xl border border-slate-200 bg-slate-50">
+                {addressSuggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setForm((current) => ({ ...current, customerAddress: item }));
+                      setAddressSuggestions([]);
+                    }}
+                    className="w-full border-b border-slate-200 px-3 py-2 text-left text-sm text-slate-700 last:border-b-0 hover:bg-slate-100"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </label>
 
           <label className="grid gap-1 text-sm text-slate-700">
@@ -219,6 +317,33 @@ export function AppointmentForm() {
               {errorMessage}
             </p>
           )}
+
+          {successMessage ? (
+            <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              {successMessage}
+            </p>
+          ) : null}
+
+          {successMessage && createdIcsUrl ? (
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={createdIcsUrl}
+                className="inline-flex items-center justify-center rounded-xl border border-teal-300 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
+              >
+                Zet deze afspraak in agenda (.ics)
+              </a>
+              {createdGoogleCalendarUrl ? (
+                <a
+                  href={createdGoogleCalendarUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100"
+                >
+                  Voeg toe aan Google Agenda
+                </a>
+              ) : null}
+            </div>
+          ) : null}
 
           <button
             type="submit"
